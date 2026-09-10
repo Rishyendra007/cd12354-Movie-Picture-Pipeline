@@ -60,14 +60,12 @@ jobs:
     needs:
       - lint
       - test
+
     defaults:
       run:
         working-directory: starter/frontend
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -105,3 +103,23 @@ jobs:
             --build-arg REACT_APP_MOVIE_API_URL=$MOVIE_API_URL \
             -t $REGISTRY/frontend:$IMAGE_TAG .
           docker push $REGISTRY/frontend:$IMAGE_TAG
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --region us-east-1 \
+            --name cluster
+
+      - name: Install Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Deploy to EKS
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd k8s
+          kustomize edit set image frontend=$REGISTRY/frontend:$IMAGE_TAG
+          kustomize build . | kubectl apply -f -
