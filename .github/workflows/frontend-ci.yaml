@@ -1,4 +1,4 @@
-name: Frontend CI
+name: Frontend Continuous Integration
 
 on:
   pull_request:
@@ -80,3 +80,6 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+      - name: Build Docker image
+        run: docker build -t frontend:ci .
