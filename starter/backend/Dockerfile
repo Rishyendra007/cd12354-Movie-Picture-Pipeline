@@ -11,8 +11,10 @@ RUN apk update && \
   gcc \
   linux-headers \
   openssl \
-  libffi-dev \
+    libffi-dev \
   && pip install pipenv
+
+ENV CFLAGS="-Wno-error=incompatible-pointer-types"
 
 RUN mkdir -p /var/www/app && mkdir /app
 
