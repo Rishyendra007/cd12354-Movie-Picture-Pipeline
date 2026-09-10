@@ -91,3 +91,23 @@ jobs:
         run: |
           docker build -t $REGISTRY/backend:$IMAGE_TAG .
           docker push $REGISTRY/backend:$IMAGE_TAG
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --region us-east-1 \
+            --name cluster
+
+      - name: Install Kustomize
+        run: |
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Deploy to EKS
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd k8s
+          kustomize edit set image backend=$REGISTRY/backend:$IMAGE_TAG
+          kustomize build . | kubectl apply -f -
